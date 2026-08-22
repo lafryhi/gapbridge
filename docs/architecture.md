@@ -45,7 +45,7 @@ flowchart TB
     GATE1 --> CTRL
     CTRL --> PLAN
     TOOLS <--> PLAN
-    MODE -. "scripted local model drives the real Strands tool loop" .-> PLAN
+    MODE -.-> PLAN
     PLAN --> CTRL
     CTRL --> GATE2
     GATE2 --> CTRL
@@ -58,11 +58,11 @@ flowchart TB
     CTRL --> REPORT --> READY
     READY --> TEACHER
 
-    CTRL -. "persists validated state and artifacts" .-> RUNS
+    CTRL -.-> RUNS
     GATE1 -.-> APPROVALS
     GATE2 -.-> APPROVALS
     GATE3 -.-> APPROVALS
-    CTRL -. "records every material transition" .-> AUDIT
+    CTRL -.-> AUDIT
     PLAN -.-> PROVENANCE
     EXERCISES -.-> PROVENANCE
 
