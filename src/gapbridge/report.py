@@ -1,0 +1,190 @@
+"""Teacher-facing Markdown report assembly.
+
+Pure formatting over already-computed artifacts (analysis, plans,
+exercises, approvals). No computation decisions are made here.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from . import config
+from .models import (
+    ApprovalDecision,
+    ClassAnalysis,
+    ExerciseSet,
+    GroupName,
+    TeacherReportMetadata,
+)
+from .plans import GroupRemediationPlan
+
+SYNTHETIC_NOTE = (
+    "All learner IDs in this report are synthetic and anonymized "
+    "(S001-S024). No real student data is present."
+)
+
+PROVENANCE_NOTE = (
+    "Statistics, gap detection and grouping were computed deterministically "
+    "from the assessment CSV. Remediation plans and exercises come from fixed "
+    "deterministic templates. No AI-generated content is included yet."
+)
+
+
+def class_skill_averages(analysis: ClassAnalysis) -> dict[str, float]:
+    """Class-wide average per sub-skill, rounded to 2 decimals."""
+    averages: dict[str, float] = {}
+    for skill in config.REQUIRED_SKILLS:
+        total = sum(la.scores[skill] for la in analysis.learners)
+        averages[skill] = round(total / len(analysis.learners), 2)
+    return averages
+
+
+def priority_gaps(analysis: ClassAnalysis) -> list[tuple[str, float]]:
+    """Sub-skills with class average below the mastery threshold, worst first."""
+    averages = class_skill_averages(analysis)
+    gaps = [
+        (skill, avg)
+        for skill, avg in averages.items()
+        if avg < config.SKILL_MASTERY_THRESHOLD
+    ]
+    return sorted(gaps, key=lambda item: item[1])
+
+
+def build_report(
+    analysis: ClassAnalysis,
+    plans: dict[GroupName, GroupRemediationPlan],
+    exercises: dict[GroupName, ExerciseSet],
+    approvals: list[ApprovalDecision],
+    metadata: TeacherReportMetadata,
+) -> str:
+    """Assemble the full Markdown report as a string."""
+    lines: list[str] = []
+    lines.append("# GapBridge Teacher Report")
+    lines.append("")
+    lines.append(
+        f"_Generated: {metadata.generated_at} | Report ID: {metadata.report_id} "
+        f"| Source: {metadata.source_file} | Plan version: {metadata.plan_version}_"
+    )
+    lines.append("")
+    lines.append(f"> **Privacy note:** {SYNTHETIC_NOTE}")
+    lines.append("")
+
+    lines.append("## 1. Class Overview")
+    lines.append("")
+    lines.append(f"- Assessment: {metadata.assessment_title}")
+    lines.append(f"- Learners analyzed: {len(analysis.learners)}")
+    lines.append(f"- Sub-skills assessed: {', '.join(config.REQUIRED_SKILLS)}")
+    lines.append("")
+
+    lines.append("## 2. Assessment Summary (class average per sub-skill)")
+    lines.append("")
+    lines.append("| Sub-skill | Class average |")
+    lines.append("|---|---|")
+    for skill, avg in class_skill_averages(analysis).items():
+        lines.append(f"| {skill} | {avg:.2f}% |")
+    lines.append("")
+
+    lines.append("## 3. Remediation Groups")
+    lines.append("")
+    lines.append("| Group | Learners |")
+    lines.append("|---|---|")
+    for group in GroupName:
+        count = sum(1 for la in analysis.learners if la.group is group)
+        lines.append(f"| {group.value} | {count} |")
+    lines.append("")
+
+    lines.append("## 4. Priority Learning Gaps")
+    lines.append("")
+    gaps = priority_gaps(analysis)
+    if gaps:
+        lines.append(
+            "Sub-skills with class average below the "
+            f"{config.SKILL_MASTERY_THRESHOLD:.0f}% mastery threshold "
+            "(worst first):"
+        )
+        lines.append("")
+        for skill, avg in gaps:
+            lines.append(f"- **{skill}** - class average {avg:.2f}%")
+    else:
+        lines.append("No class-level gaps below the mastery threshold.")
+    lines.append("")
+
+    lines.append("## 5. Learner Group Explanations")
+    lines.append("")
+    for group in GroupName:
+        lines.append(f"### {group.value}")
+        lines.append("")
+        for la in analysis.learners:
+            if la.group is not group:
+                continue
+            lines.append(f"- **{la.learner_id}** - {la.explanation}")
+        lines.append("")
+
+    lines.append("## 6. Approved Remediation Plans")
+    lines.append("")
+    for group in GroupName:
+        plan = plans[group].current
+        lines.append(f"### {group.value} ({plan.plan_id})")
+        lines.append("")
+        lines.append(f"- Status: {plan.status}")
+        lines.append(f"- Version: {plan.version}")
+        lines.append(f"- Priority: {plan.priority}")
+        lines.append(f"- Recommended sessions: {plan.session_count}")
+        lines.append(f"- Target skills: {', '.join(plan.target_skills)}")
+        lines.append(f"- Instructional focus: {plan.instructional_focus}")
+        lines.append("- Success criteria:")
+        for criterion in plan.success_criteria:
+            lines.append(f"  - {criterion}")
+        lines.append("")
+
+    lines.append("## 7. Exercise Sets Summary")
+    lines.append("")
+    generated_by = next(iter(exercises.values())).generated_by
+    lines.append(f"Generated by: `{generated_by}`")
+    lines.append("")
+    lines.append("| Group | Items | Skills covered |")
+    lines.append("|---|---|---|")
+    for group in GroupName:
+        exercise_set = exercises[group]
+        skills = ", ".join(dict.fromkeys(i.skill for i in exercise_set.items))
+        lines.append(
+            f"| {group.value} | {len(exercise_set.items)} | {skills} |"
+        )
+    lines.append("")
+    first_set = exercises[GroupName.INTENSIVE_SUPPORT]
+    if first_set.items:
+        sample = first_set.items[0]
+        lines.append(
+            f"Sample item ({first_set.group.value}, {sample.skill}): "
+            f'"{sample.prompt}" Expected answer: `{sample.answer}`'
+        )
+        lines.append("")
+
+    lines.append("## 8. Approval Record")
+    lines.append("")
+    if approvals:
+        for decision in approvals:
+            comment = f' - Comment: "{decision.comment}"' if decision.comment else ""
+            lines.append(
+                f"- {decision.timestamp} - **{decision.decision.upper()}** by "
+                f"{decision.actor} for plan version {decision.plan_version}"
+                f"{comment}"
+            )
+    else:
+        lines.append("No approval recorded yet.")
+    lines.append("")
+
+    lines.append("## 9. Provenance and Privacy Notes")
+    lines.append("")
+    lines.append(f"- {PROVENANCE_NOTE}")
+    lines.append(f"- {SYNTHETIC_NOTE}")
+    lines.append("- Audit trail: append-only JSONL at `runtime/audit/audit_log.jsonl`.")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def save_report(path: Path, content: str) -> Path:
+    """Write the Markdown report to disk."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    return path

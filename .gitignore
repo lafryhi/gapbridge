@@ -1,0 +1,52 @@
+# Virtual environment
+.venv/
+
+# Python cache / bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.pytest_tmp/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Environment variables and secrets - never commit
+.env
+.env.*
+*.env
+.streamlit/secrets.toml
+
+# Local AWS credential files - never commit
+.aws/
+credentials
+*.pem
+*.key
+*.p12
+*.pfx
+
+# IDE temporary files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local workflow state and audit logs
+runtime/
+
+# Local presentation and pre-publication working files
+DEMO_REHEARSAL_PLAYBOOK.md
+SUBMISSION_READINESS_AUDIT.md
+ARCHITECTURE_PLAN.md
+
+# Build and local log output
+build/
+dist/
+*.log
+
+# OS artifacts
+Thumbs.db
+.DS_Store
