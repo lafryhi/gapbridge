@@ -108,3 +108,14 @@ shown explicitly. Unverified details are intentionally omitted.
 - Verified the offline CLI demo reached `REPORT_READY` with all three approval gates and no external model or AWS calls.
 - Prepared the reviewed file set as the initial local publication baseline commit. No remote, push, deployment, or publication was performed.
 - Replaced the final tracked references to the ignored historical architecture plan with `docs/architecture.md`, removing a clean-clone documentation/test dependency. Final regression result after this correction: **126 tests passed in 2.03s**.
+
+### Sprint 8B — 2026-08-23
+
+- Created the public GitHub repository at `https://github.com/lafryhi/gapbridge` with `main` as the default branch and pushed the reviewed local baseline without rewriting history.
+- Retained the neutral Git identity `GapBridge Contributors <gapbridge@example.invalid>`; no history rewrite was performed for attribution.
+- Verified the public README presentation, MIT License, architecture document, source, tests, requirements, and synthetic dataset from GitHub and a fresh public clone.
+- GitHub initially reported `Could not find a suitable point for the given distance` for the Mermaid layout. Removed only three dashed-edge labels, committed the syntax-only correction normally, and visually verified the diagram rendered successfully afterward.
+- Rechecked the 52-file public tree and fresh clone for secret-token patterns, personal emails, absolute local paths, runtime/environment data, private planning documents, and real student information; no publishable issue was found.
+- Verified preflight result: **8/8 checks passed** with no AWS, Bedrock, or external model calls.
+- Verified regression result: **126 tests passed in 3.64s**.
+- Last verified publication-content commit before this append: `2e7d0a8837c8ae77cbc1803c796f829fb99b0e7b`. The subsequent journal-only commit is recorded by Git history and in the Sprint 8B report.
