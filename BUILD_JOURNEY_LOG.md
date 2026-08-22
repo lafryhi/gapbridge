@@ -119,3 +119,12 @@ shown explicitly. Unverified details are intentionally omitted.
 - Verified preflight result: **8/8 checks passed** with no AWS, Bedrock, or external model calls.
 - Verified regression result: **126 tests passed in 3.64s**.
 - Last verified publication-content commit before this append: `2e7d0a8837c8ae77cbc1803c796f829fb99b0e7b`. The subsequent journal-only commit is recorded by Git history and in the Sprint 8B report.
+
+### Sprint 9 — 2026-08-23
+
+- Prepared a final 4-minute-42-second demo-video strategy, shot sequence, and 559-word English narration focused on the teacher problem, live workflow, responsible architecture, and potential impact.
+- Made the Strands Agents SDK role explicit: one bounded content agent, eight safe tools, strict structured output, deterministic revalidation, and three human approval gates.
+- Prepared an accurate provider disclosure for `STRANDS_OFFLINE_TEST` and the future Bedrock provider boundary pending AWS account authorization, without attributing current output to Bedrock.
+- Added recording-day privacy and quality checks, concise overlay captions, proposed public video metadata, and a fallback based only on persisted real runs, the generated report, and the public architecture page.
+- Kept the detailed production blueprint in the existing ignored local rehearsal playbook. No product logic changed, and no video was recorded, uploaded, or published.
+- Verified recording readiness with the local preflight at **8/8** and the canonical project test directory at **126 tests passed in 2.04s**; no AWS, Bedrock, or external model calls were made.
